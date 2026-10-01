@@ -167,6 +167,18 @@ instance lieQuotientLieAlgebra : LieAlgebra R (L ⧸ I) where
       | rw [← Submodule.Quotient.mk_smul (R := R) (M := L)]
     apply congr_arg; apply lie_smul
 
+/-- `LieSubmodule.Quotient.mk` as a `LieHom`. -/
+@[simps]
+def mk'' : L →ₗ⁅R⁆ L ⧸ I := {
+  toFun := I.toSubmodule.mkQ
+  map_add' := by simp only [Submodule.mkQ_apply, Submodule.Quotient.mk_add, implies_true]
+  map_smul' := by simp only [map_smul, Submodule.mkQ_apply, RingHom.id_apply, implies_true]
+  map_lie' := by simp only [Submodule.mkQ_apply, mk_bracket, implies_true]
+}
+
+@[simp]
+theorem surjective_mk'' : Function.Surjective (Quotient.mk'' I) := Quot.mk_surjective
+
 /-- `LieSubmodule.Quotient.mk` as a `LieModuleHom`. -/
 @[simps]
 def mk' : M →ₗ⁅R,L⁆ M ⧸ N :=

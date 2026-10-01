@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.BaseChange
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
+public import Mathlib.Algebra.Lie.Quotient
 
 /-!
 # Solvable Lie algebras
@@ -461,5 +462,30 @@ theorem abelian_of_solvable_ideal_eq_bot_iff (I : LieIdeal R L) [h : IsSolvable 
     obtain ⟨_, h₂⟩ := (derivedSeries_of_derivedLength_succ R L I k).mp h
     have h₃ : I ≠ ⊥ := by rintro rfl; apply h₂; apply derivedSeries_of_bot_eq_bot
     simp only [h₂, h₃]
+
+theorem solvable_of_ideal_and_quot_solvable
+    (quotsol : LieAlgebra.IsSolvable (L ⧸ I))
+    (Isol : LieAlgebra.IsSolvable I) :
+    LieAlgebra.IsSolvable L := by
+  rw [LieAlgebra.isSolvable_iff R] at *
+  obtain ⟨k₁, hk₁⟩ := quotsol
+  obtain ⟨k₂, hk₂⟩ := Isol
+  use k₂ + k₁
+  have : derivedSeries R L k₁ ≤ I := by
+    intro x hx
+    rw [← LieIdeal.derivedSeries_map_eq k₁ (LieSubmodule.Quotient.surjective_mk'' I),
+      eq_bot_iff, LieIdeal.map_le] at hk₁
+    rw [← LieSubmodule.Quotient.mk_eq_zero']
+    apply hk₁
+    use x, hx
+    rfl
+  rw [derivedSeries_def, derivedSeriesOfIdeal_add, ← derivedSeries_def R L k₁, eq_bot_iff]
+  have h₁ : derivedSeriesOfIdeal R L k₂ (derivedSeries R L k₁) ≤ derivedSeriesOfIdeal R L k₂ I :=
+    derivedSeriesOfIdeal_le this (le_refl _)
+  have h₂ : derivedSeriesOfIdeal R L k₂ (derivedSeries R L k₁) ≤ I :=
+    le_trans h₁ (derivedSeriesOfIdeal_le_self I k₂)
+  rw [LieIdeal.derivedSeries_eq_derivedSeriesOfIdeal_comap] at hk₂
+  simp only [LieIdeal.comap_incl_eq_bot,Disjoint] at hk₂
+  exact hk₂ h₂ h₁
 
 end LieAlgebra

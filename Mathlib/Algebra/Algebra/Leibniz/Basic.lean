@@ -8,6 +8,7 @@ module
 
 public import Mathlib.Algebra.Lie.Basic
 public import Mathlib.LinearAlgebra.Span.Defs
+public import Mathlib.Algebra.Algebra.NonUnitalIdeal
 
 import Aesop.BuiltinRules
 import Mathlib.Tactic.Lemma
@@ -217,5 +218,275 @@ instance ofLieRing {A : Type*} [LieRing A] : @IsLeibniz A (LieRing.toNonUnitalNo
     module }
 
 end OfLie
+
+end Leibniz
+
+
+/- --------------------------QUOTIENTS and IDEALS -------------------- -/
+
+namespace Leibniz
+
+open Submodule
+
+open NonUnitalNonAssocAlgebra
+open NonUnitalNonAssocSemiring
+
+/-- The Leibniz ideal in a Leibniz algebra is the ideal spanned by squares. -/
+def leibnizIdeal (R : Type*) [Ring R] (A : Type*) [NonUnitalNonAssocRing A]
+    [IsLeibniz A] [Module R A] [SMulCommClass R A A] [IsScalarTower R A A] :
+    TwoSidedIdeal R A :=
+  { spanOfSquares R A with
+    left_mul_mem' a x hx := by
+      rw [← LinearMap.mulLeft_apply R]
+      apply squareSpan_left_mul_mem
+      exact mem_map_of_mem (f:=(LinearMap.mulLeft R a)) hx
+    right_mul_mem' a x hx := by
+      rw [← LinearMap.mulRight_apply R]
+      apply squareSpan_right_mul_mem
+      apply mem_map_of_mem hx
+  }
+
+instance (R : Type*) [Ring R] (A : Type*) [NonUnitalNonAssocRing A]
+      [IsLeibniz A] [Module R A] [SMulCommClass R A A] [IsScalarTower R A A]
+      : AddCommGroup (leibnizIdeal R A) :=
+  inferInstanceAs <| AddCommGroup ((leibnizIdeal R A).toSubmodule)
+
+instance (R : Type*) [Ring R] (A : Type*) [NonUnitalNonAssocRing A]
+      [IsLeibniz A] [Module R A] [SMulCommClass R A A] [IsScalarTower R A A]
+      : Module R (leibnizIdeal R A) :=
+  inferInstanceAs <| Module R ((leibnizIdeal R A).toSubmodule)
+
+theorem leibnizIdeal_toSubmodule {R : Type*} [Ring R] {A : Type*}
+      [NonUnitalNonAssocRing A] [IsLeibniz A] [Module R A]
+      [SMulCommClass R A A] [IsScalarTower R A A] :
+    (leibnizIdeal R A).toSubmodule = span R (Set.range fun x : A => x * x) := by
+  rfl
+
+theorem square_mem_leibnizIdeal (R : Type*) [Ring R] {A : Type*}
+      [NonUnitalNonAssocRing A] [IsLeibniz A] [Module R A]
+      [SMulCommClass R A A] [IsScalarTower R A A] (x : A) :
+    x * x ∈ leibnizIdeal R A := by
+  rw [← TwoSidedIdeal.mem_toSubmodule, leibnizIdeal_toSubmodule]
+  apply subset_span
+  simp
+
+/-- An ideal contains the Leibniz ideal if and only if it contains every square. -/
+theorem leibnizIdeal_le_iff (R : Type*) [Ring R] (A : Type*) [NonUnitalNonAssocRing A]
+    [IsLeibniz A] [Module R A] [SMulCommClass R A A] [IsScalarTower R A A]
+    {I : TwoSidedIdeal R A} :
+    leibnizIdeal R A ≤ I ↔ ∀ x : A, x * x ∈ I := by
+  constructor
+  · intro hI x
+    refine Set.mem_of_mem_of_subset ?_ hI
+    apply square_mem_leibnizIdeal
+  · intro hx
+    apply span_le.mpr
+    intro y ⟨z,hy⟩
+    apply hx at z
+    rw [← hy]
+    simpa
+
+namespace Quotient
+
+open NonUnitalNonAssocAlgebra
+
+variable (R : Type*) [Ring R]
+variable (A : Type*) [NonUnitalNonAssocRing A] [IsLeibniz A]
+variable [Module R A] [SMulCommClass R A A] [IsScalarTower R A A]
+
+instance {I : TwoSidedIdeal R A} : IsLeibniz (A ⧸ I) := {
+  leibniz' x y z := by
+    apply TwoSidedIdeal.Quotient.induction_on x
+    intro x
+    apply TwoSidedIdeal.Quotient.induction_on y
+    intro y
+    apply TwoSidedIdeal.Quotient.induction_on z
+    intro z
+    simp only [← TwoSidedIdeal.Quotient.mk_mul, ← TwoSidedIdeal.Quotient.mk_add]
+    rw [Leibniz.leibniz]
+}
+
+instance {R : Type*} [Ring R] {A : Type*}
+      [NonUnitalNonAssocRing A] [IsLeibniz A] [Module R A]
+      [SMulCommClass R A A] [IsScalarTower R A A] :
+    IsSkew (A ⧸ leibnizIdeal R A) := by
+  constructor
+  intro x
+  apply TwoSidedIdeal.Quotient.induction_on x
+  intro x
+  rw [← TwoSidedIdeal.Quotient.mk_mul, TwoSidedIdeal.Quotient.mk_eq_zero]
+  apply square_mem_leibnizIdeal
+
+/-- The Leibniz quotient `A ⧸ leibnizIdeal R A` is a Lie algebra. -/
+instance {R : Type*} [CommRing R] {A : Type*}
+      [NonUnitalNonAssocRing A] [IsLeibniz A] [Module R A]
+      [SMulCommClass R A A] [IsScalarTower R A A] :
+    LieAlgebra R (A ⧸ leibnizIdeal R A) := by
+  exact Leibniz.instLieAlgebra
+
+/-- Every element of the quotient squares to zero if and only if
+the defining ideal contains the Leibniz ideal. -/
+theorem isSkew_quotient_iff {I : TwoSidedIdeal R A} :
+    IsSkew (A ⧸ I) ↔ leibnizIdeal R A ≤ I := by
+  constructor
+  · intro hSk
+    apply (leibnizIdeal_le_iff (R:=R) (A:=A) (I:=I)).mpr
+    intro x
+    apply (TwoSidedIdeal.Quotient.mk_eq_zero).mp
+    rw [TwoSidedIdeal.Quotient.mk_mul]
+    apply IsSkew.skew
+  · rw [leibnizIdeal_le_iff]
+    intro h
+    refine { skew := ?_ }
+    intro x
+    have ⟨ a,ha⟩:=Quotient.mk''_surjective x
+    rw [← ha]
+    change TwoSidedIdeal.Quotient.mk (R:=R) (I:=I) a * TwoSidedIdeal.Quotient.mk (R:=R) (I:=I) a = 0
+    rw [← TwoSidedIdeal.Quotient.mk_mul]
+    apply (TwoSidedIdeal.Quotient.mk_eq_zero).mpr
+    exact h a
+
+end Quotient
+
+variable {R : Type*} [Ring R]
+variable {A : Type*} [NonUnitalNonAssocRing A]
+variable [Module R A] [SMulCommClass R A A]
+variable [IsLeibniz A]
+
+variable (R A) in
+/-- The right annihilator `{x | y * x = 0 for all y}` is an ideal in a Leibniz algebra. -/
+def rightAnnihilator : TwoSidedIdeal R A where
+  carrier := {x : A | ∀ y : A, y * x = 0}
+  zero_mem' := by intro y; simp
+  add_mem' := by
+    intro x y hx hy z
+    rw [mul_add, hx z, hy z, zero_add]
+  smul_mem' := by
+    intro r x hx y
+    rw [mul_smul_comm, hx y, smul_zero]
+  left_mul_mem' a {x} hx := by
+    change ∀ y : A, y * (a * x) = 0
+    change ∀ y : A, y * x = 0 at hx
+    intro y
+    have h := leibniz (y) (a) (x)
+    rw [hx (y * a), hx y] at h
+    simpa using h.symm
+  right_mul_mem' a {x} hx := by
+    change ∀ y : A, y * (x * a) = 0
+    change ∀ y : A, y * x = 0 at hx
+    intro y
+    have h := leibniz (y) (x) (a)
+    rw [hx y, hx (y * a)] at h
+    simpa using h.symm
+
+instance : AddCommGroup (rightAnnihilator R A) :=
+  inferInstanceAs <| AddCommGroup ((rightAnnihilator R A).toSubmodule)
+
+instance : Module R (rightAnnihilator R A) :=
+  inferInstanceAs <| Module R ((rightAnnihilator R A).toSubmodule)
+
+@[simp]
+theorem mem_rightAnnihilator {x : A} :
+    x ∈ rightAnnihilator R A ↔ ∀ y : A, y * x = 0 :=
+  Iff.rfl
+
+theorem square_mem_rightAnnihilator (x : A) : x * x ∈ rightAnnihilator R A  := by
+  dsimp [rightAnnihilator]
+  intro y
+  exact mul_left_mul_self x y
+
+theorem rightAnnihilator_eq_top_iff :
+    rightAnnihilator R A = ⊤ ↔ ∀ x y : A, x * y = 0 := by
+  simp_rw [← Function.Injective.eq_iff TwoSidedIdeal.toSubmodule_injective,
+    TwoSidedIdeal.top_toSubmodule, eq_top_iff', TwoSidedIdeal.mem_toSubmodule,
+    mem_rightAnnihilator]
+  rw [forall_comm]
+
+/-- If `rightAnnihilator R A = ⊤`, then every element of `A` squares to zero. -/
+theorem isSkew_of_rightAnnihilator_eq_top (h : rightAnnihilator R A = ⊤) :
+    IsSkew A := by
+  refine { skew := ?_ }
+  rw [rightAnnihilator_eq_top_iff (R:=R) (A:=A)] at h
+  intro x
+  exact h x x
+
+/-- If `rightAnnihilator R A = ⊥`, then every element of `A` squares to zero. -/
+theorem square_eq_zero_of_rightAnnihilator_eq_bot (h : rightAnnihilator R A = ⊥) :
+    IsSkew A := by
+  refine {skew :=?_ }
+  simp_rw [← Function.Injective.eq_iff TwoSidedIdeal.toSubmodule_injective,
+    TwoSidedIdeal.bot_toSubmodule, Submodule.eq_bot_iff, TwoSidedIdeal.mem_toSubmodule,
+    mem_rightAnnihilator] at h
+  intro x
+  apply h
+  apply mul_left_mul_self
+
+variable [IsScalarTower R A A]
+
+theorem leibnizIdeal_in_rightAnnihilator :
+    leibnizIdeal R A ≤ rightAnnihilator R A := by
+  unfold leibnizIdeal
+  unfold spanOfSquares
+  apply (Submodule.span_le).mpr
+  intro x hx
+  rw [Set.mem_range] at hx
+  obtain ⟨y, hy⟩ := hx
+  unfold rightAnnihilator
+  simp only [coe_set_mk, AddSubmonoid.coe_set_mk, AddSubsemigroup.coe_set_mk, Set.mem_ofPred_eq]
+  intro z
+  rw [← hy]
+  exact mul_left_mul_self y z
+
+variable (R) in
+theorem leibnizideal_eq_bot_iff : leibnizIdeal R A = ⊥ ↔ IsSkew A := by
+  rw [← Function.Injective.eq_iff TwoSidedIdeal.toSubmodule_injective,
+    TwoSidedIdeal.bot_toSubmodule, Submodule.eq_bot_iff, leibnizIdeal_toSubmodule]
+  constructor
+  · intro h
+    refine { skew := ?_ }
+    intro x
+    specialize h (x * x)
+    apply h
+    apply Submodule.subset_span
+    use x
+  · intro _ _ hx
+    have : Set.range (fun (x : A) ↦ x * x) = { 0 } := by
+      rw [Set.range_eq_singleton_iff]
+      exact fun x ↦ IsSkew.skew x
+    rw [this] at hx
+    simp only [span_zero_singleton, mem_bot] at hx
+    exact hx
+
+variable (R) in
+/-- `leibnizIdeal R A = ⊥` if and only if every element of `A` squares to zero. -/
+theorem leibnizideal_eq_bot_iff' : leibnizIdeal R A = ⊥ ↔ IsSkew A:= by
+  rw [leibnizideal_eq_bot_iff R]
+
+theorem leibnizIdeal_le_top_of_Nontrivial [Nontrivial A] :
+    leibnizIdeal R A < ⊤ := by
+  by_contra htop
+  simp only [not_lt_top_iff] at htop
+  have hRA : rightAnnihilator R A = ⊤ := by
+    apply le_antisymm
+    · exact le_top
+    · rw [← htop]
+      exact leibnizIdeal_in_rightAnnihilator (R:=R) (A:=A)
+  have hskew :IsSkew A :=
+    isSkew_of_rightAnnihilator_eq_top (R:=R) (A:=A) hRA
+  have hbot : leibnizIdeal R A = ⊥ :=
+    (leibnizideal_eq_bot_iff (R:=R) (A:=A)).mpr hskew
+  have htopbot : (⊤ : NonUnitalNonAssocAlgebra.TwoSidedIdeal R A) = ⊥ :=
+    htop.symm.trans hbot
+  have hsub : Subsingleton A := by
+    refine ⟨?_⟩
+    intro x y
+    have hx : x ∈ (⊤ : NonUnitalNonAssocAlgebra.TwoSidedIdeal R A) := mem_top
+    rw [htopbot] at hx
+    have hy : y ∈ (⊤ : NonUnitalNonAssocAlgebra.TwoSidedIdeal R A) := mem_top
+    rw [htopbot] at hy
+    have hx0 : x = 0 := (Submodule.mem_bot R).mp hx
+    have hy0 : y = 0 := (Submodule.mem_bot R).mp hy
+    exact hx0.trans hy0.symm
+  exact (not_nontrivial_iff_subsingleton.mpr hsub) (inferInstance : Nontrivial A)
 
 end Leibniz

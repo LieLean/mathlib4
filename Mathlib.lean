@@ -21,6 +21,7 @@ public import Mathlib.Algebra.Algebra.Hom.Rat
 public import Mathlib.Algebra.Algebra.IsSimpleRing
 public import Mathlib.Algebra.Algebra.Leibniz.Basic
 public import Mathlib.Algebra.Algebra.NonUnitalHom
+public import Mathlib.Algebra.Algebra.NonUnitalIdeal
 public import Mathlib.Algebra.Algebra.NonUnitalSubalgebra
 public import Mathlib.Algebra.Algebra.Operations
 public import Mathlib.Algebra.Algebra.Opposite

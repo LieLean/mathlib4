@@ -141,8 +141,8 @@ inductive Index where
   | L13 /-Case 2.2.2.2.-/
 
 /- If it was a `def`, then a `show ... from` is needed in `IsLeibniz` instances-/
-abbrev d (idx : Index R) : Type :=
-  match idx with -- := Fin 3 → R/-
+abbrev d (idx : Index R) : Type := Fin 3 → R/-
+  match idx with -- :=
   | .L1 => Families (0 : R) 1 (-2) 0 0 1 0 0 0 0 (-1)
   | .L2 α => Families (0 : R) 0 α 0 0 1 0 0 0 0 (-1)
   | .L3 => Families (0 : R) 0 0 1 0 1 0 0 0 0 (-1)
@@ -156,6 +156,7 @@ abbrev d (idx : Index R) : Type :=
   | .L11 => Families (0 : R) 0 1 0 0 0 0 0 0 0 1
   | .L12 => Families (0 : R) 0 0 1 0 0 0 0 1 0 0
   | .L13 => Families (0 : R) 0 1 1 0 0 0 0 1 0 0
+  -/
 
 instance (idx : Index R) : NonUnitalNonAssocRing (d R idx) :=
   match idx with

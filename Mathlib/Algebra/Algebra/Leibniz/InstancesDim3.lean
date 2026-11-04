@@ -141,7 +141,8 @@ inductive Index where
   | L13 /-Case 2.2.2.2.-/
 
 /- If it was a `def`, then a `show ... from` is needed in `IsLeibniz` instances-/
-abbrev d (idx : Index R) : Type := Fin 3 → R/-
+abbrev d (idx : Index R) : Type :=
+  match idx with -- := Fin 3 → R/-
   | .L1 => Families (0 : R) 1 (-2) 0 0 1 0 0 0 0 (-1)
   | .L2 α => Families (0 : R) 0 α 0 0 1 0 0 0 0 (-1)
   | .L3 => Families (0 : R) 0 0 1 0 1 0 0 0 0 (-1)
@@ -154,7 +155,7 @@ abbrev d (idx : Index R) : Type := Fin 3 → R/-
   | .L10 α => Families (0 : R) 0 0 0 0 0 0 α 0 1 0
   | .L11 => Families (0 : R) 0 1 0 0 0 0 0 0 0 1
   | .L12 => Families (0 : R) 0 0 1 0 0 0 0 1 0 0
-  | .L13 => Families (0 : R) 0 1 1 0 0 0 0 1 0 0 -/
+  | .L13 => Families (0 : R) 0 1 1 0 0 0 0 1 0 0
 
 instance (idx : Index R) : NonUnitalNonAssocRing (d R idx) :=
   match idx with
@@ -212,6 +213,10 @@ lemma eval2 (a b c : R) : ![a, b, c] 2 = c := rfl
       β₃ * x 2 * y 1 - β₃ * x 1 * y 2
 
       (Families (0 : R) al1 1 al2 (-2) 0 0 beta1 1 0 0 0 0 nu (-1)))-/
+
+variable (x y : d R .L1)
+#synth Mul (d R .L1)
+
 @[simp]
 lemma d.mul_def_L1
     (x y : d R .L1) :

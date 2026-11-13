@@ -3,7 +3,9 @@ import Mathlib.LinearAlgebra.Basis.Defs
 import Mathlib.GroupTheory.GroupAction.SubMulAction
 import Mathlib.LinearAlgebra.Span.Basic
 import Mathlib.LinearAlgebra.Basis.Defs
+import Mathlib.LinearAlgebra.Dimension.Finrank
 import Mathlib.Logic.Equiv.Fin.Basic
+
 
 
 /-! In this file we set the instances of isomorphism classes of Leibniz algberas of
@@ -107,20 +109,6 @@ instance (α₁ α₂ α₃ α₄ β₁ β₂ β₃ γ₁ μ δ ν : R) :
       ring
 }
 
-universe u v w
-
-structure NonUnitalAlgEquiv
-    (R : Type u) (A : Type v) (B : Type w)
-    [Field R]
-    [NonUnitalNonAssocRing A] [Module R A]
-    [NonUnitalNonAssocRing B] [Module R B]
-    extends A ≃ₗ[R] B where
-      map_mul' : ∀ x y : A,
-      toLinearEquiv (x * y) =
-      toLinearEquiv x * toLinearEquiv y
-
-notation:25 A " ≃ₙₐ[" R "] " B => NonUnitalAlgEquiv R A B
-
 section inductiveTypes
 
 variable (R : Type) [Field R]
@@ -141,8 +129,8 @@ inductive Index where
   | L13 /-Case 2.2.2.2.-/
 
 /- If it was a `def`, then a `show ... from` is needed in `IsLeibniz` instances-/
-abbrev d (idx : Index R) : Type := Fin 3 → R/-
-  match idx with -- :=
+abbrev d (idx : Index R) : Type := --Fin 3 → R/-
+  match idx with
   | .L1 => Families (0 : R) 1 (-2) 0 0 1 0 0 0 0 (-1)
   | .L2 α => Families (0 : R) 0 α 0 0 1 0 0 0 0 (-1)
   | .L3 => Families (0 : R) 0 0 1 0 1 0 0 0 0 (-1)
@@ -156,97 +144,109 @@ abbrev d (idx : Index R) : Type := Fin 3 → R/-
   | .L11 => Families (0 : R) 0 1 0 0 0 0 0 0 0 1
   | .L12 => Families (0 : R) 0 0 1 0 0 0 0 1 0 0
   | .L13 => Families (0 : R) 0 1 1 0 0 0 0 1 0 0
-  -/
 
-instance (idx : Index R) : NonUnitalNonAssocRing (d R idx) :=
-  match idx with
-  | .L1 => inferInstanceAs (NonUnitalNonAssocRing (Families (0 : R) 1 (-2) 0 0 1 0 0 0 0 (-1)))
-  | .L2 α => inferInstanceAs (NonUnitalNonAssocRing (Families (0 : R) 0 α 0 0 1 0 0 0 0 (-1)))
-  | .L3 => inferInstanceAs (NonUnitalNonAssocRing (Families (0 : R) 0 0 1 0 1 0 0 0 0 (-1)))
-  | .L4 => inferInstanceAs (NonUnitalNonAssocRing (Families (0 : R) 1 0 1 0 0 0 0 0 0 0))
-  | .L5 α => inferInstanceAs (NonUnitalNonAssocRing (Families (0 : R) 1 0 α 0 0 0 0 0 0 0))
-  | .L6 α => inferInstanceAs (NonUnitalNonAssocRing (Families (0 : R) 1 0 α 0 0 0 1 0 0 0))
-  | .L7 => inferInstanceAs (NonUnitalNonAssocRing (Families (0 : R) 0 0 0 0 0 0 1 0 0 0))
-  | .L8 => inferInstanceAs (NonUnitalNonAssocRing (Families (0 : R) 0 0 0 0 0 0 1 1 0 0))
-  | .L9 α => inferInstanceAs (NonUnitalNonAssocRing (Families (0 : R) 0 0 0 0 0 0 α 1 0 0))
-  | .L10 α => inferInstanceAs (NonUnitalNonAssocRing (Families (0 : R) 0 0 0 0 0 0 α 0 1 0))
-  | .L11 => inferInstanceAs (NonUnitalNonAssocRing (Families (0 : R) 0 1 0 0 0 0 0 0 0 1))
-  | .L12 => inferInstanceAs (NonUnitalNonAssocRing (Families (0 : R) 0 0 1 0 0 0 0 1 0 0))
-  | .L13 => inferInstanceAs (NonUnitalNonAssocRing (Families (0 : R) 0 1 1 0 0 0 0 1 0 0))
+#check Index.L1
+
+instance (idx : Index R) : NonUnitalNonAssocRing (d R idx) :=  by cases idx <;> infer_instance
 
 instance (idx : Index R) : Module R (d R idx) := by cases idx <;> infer_instance
 
-/- variable {R} in
-@[coe]
-def d_toFun : {idx : Index R} →  d R idx → Fin 3 → R
-| .L1 => fun x i ↦ x i
-| .L2 α => fun x i ↦ x i
-| .L3 => fun x i ↦ x i
-| .L4 => fun x i ↦ x i
-| .L5 α => fun x i ↦ x i
-| .L6 α => fun x i ↦ x i
-| .L7 => fun x i ↦ x i
-| .L8 => fun x i ↦ x i
-| .L9 α => fun x i ↦ x i
-| .L10 α => fun x i ↦ x i
-| .L11 => fun x i ↦ x i
-| .L12 => fun x i ↦ x i
-| .L13 => fun x i ↦ x i
- -//-
-instance {idx : Index R} : CoeFun (d R idx) (fun _ ↦  Fin 3 → R) where
-  coe := d_toFun -/
+end inductiveTypes
 
-@[ext] lemma d_ext {idx : Index R} {x y : d R idx} (h0 : x 0 = y 0) (h1 : x 1 = y 1) (h2 : x 2 = y 2)
-: x = y :=
-  sorry
+namespace Families
 
-omit [Field R] in
-lemma eval0 (a b c : R) : ![a, b, c] 0 = a := rfl
+variable (R : Type) [Field R]
 
-omit [Field R] in
-lemma eval1 (a b c : R) : ![a, b, c] 1 = b := rfl
+variable {α₁ α₂ α₃ α₄ β₁ β₂ β₃ γ₁ μ δ ν : R} (x : Families α₁ α₂ α₃ α₄ β₁ β₂ β₃ γ₁ μ δ ν) (i : Fin 3)
+
+/-- The coordinate map `toCoordinates` as an `R`-linear map. -/
+def toCoordinates :
+    (Families α₁ α₂ α₃ α₄ β₁ β₂ β₃ γ₁ μ δ ν) →ₗ[R] (Fin 3 → R) where
+  toFun := fun x => x
+  map_add' _ _ := by rfl
+  map_smul' _ _ := by rfl
+
+instance : CoeFun (Families α₁ α₂ α₃ α₄ β₁ β₂ β₃ γ₁ μ δ ν) (fun _ => Fin 3 → R) where
+  coe := toCoordinates R
+
+#check toCoordinates R x i
+
+lemma toCoordinates_apply : toCoordinates R x = x
+    := rfl
+
+lemma toCoordinates_injective : Function.Injective (@toCoordinates R _ α₁ α₂ α₃ α₄ β₁ β₂ β₃ γ₁ μ δ ν)
+    := by
+  intro x y hxy
+  exact hxy
 
 omit [Field R] in
-lemma eval2 (a b c : R) : ![a, b, c] 2 = c := rfl
+@[ext]
+lemma ext {x y : Families α₁ α₂ α₃ α₄ β₁ β₂ β₃ γ₁ μ δ ν}
+    (h0 : x 0 = y 0) (h1 : x 1 = y 1) (h2 : x 2 = y 2)
+    : x = y := by
+  funext i
+  fin_cases i <;> assumption
 
-/- α₁ * x 0 * y 1 + α₃ * x 0 * y 2 + α₂ * x 1 * y 1 + γ₁ * x 1 * y 2 + β₁ * x 2 * y 1
-    + α₄ * x 2 * y 2 , β₂ * x 2 * y 1 + ν  * x 1 * y 2 + μ * x 0 * y 2 + δ * x 2 * y 2,
-      β₃ * x 2 * y 1 - β₃ * x 1 * y 2
+end Families
 
-      (Families (0 : R) al1 1 al2 (-2) 0 0 beta1 1 0 0 0 0 nu (-1)))-/
+namespace d
 
-variable (x y : d R .L1)
-#synth Mul (d R .L1)
+variable (R : Type) [Field R]
 
-@[simp]
-lemma d.mul_def_L1
-    (x y : d R .L1) :
-    x * y = ![x 0 * y 1 - 2 * x 1 * y 1 +  x 2 * y 1, -1 * x 1 * y 2 ,0] := by
-   apply d_ext
-   ·
-     simp
-     sorry
-   · sorry
-   · sorry
+variable {R} in
+/-- The coordinate map `toCoordinates` as an `R`-linear map. -/
+def toCoordinates (idx : Index R) : d R idx →ₗ[R] (Fin 3 → R) where
+  toFun := by
+    cases idx <;> use @Families.toCoordinates R _ _ _ _ _ _ _ _ _ _ _ _
+  map_add' := by
+    intro x y
+    cases idx <;> rfl
+  map_smul' := by
+    intro r x
+    cases idx <;> rfl
 
+variable {idx : Index R} (x : d R idx)
+#check toCoordinates
 
+instance {idx : Index R} :
+    CoeFun (d R idx) (fun _ => Fin 3 → R) where
+  coe := toCoordinates idx
+
+lemma toCoordinates_injective {idx : Index R} : Function.Injective (@toCoordinates R _ idx) := by
+  cases idx <;> unfold toCoordinates <;> exact Families.toCoordinates_injective R
+
+lemma toCoordinates_mul_L1 (x y : d R .L1) :
+    toCoordinates .L1 (x * y) = ![-2 * (toCoordinates .L1 x) 0 * (toCoordinates .L1 y) 2 +
+    (toCoordinates .L1 x) 1 * (toCoordinates .L1 y) 1, (
+    toCoordinates .L1 x) 2 * (toCoordinates .L1 y) 1 -
+    (toCoordinates .L1 x) 1 * (toCoordinates .L1 y) 2, 0] := by
+  change x * y = ![-2 * x 0 * y 2 + x 1 * y 1, x 2 * y 1 - x 1 * y 2, 0]
+  rw [Families.mul_def]
+  simp [sub_eq_add_neg]
+  rfl
 
 set_option trace.profiler true in
 instance (idx : Index R) : IsLeibniz (d R idx) :=
   match idx with
   | .L1 => {
             leibniz' x y z := by
-              refine funext fun i ↦ ?_
-              simp [Families.add_apply]
-              repeat rw [d.mul_def_L1]
-              fin_cases i
-              · simp
-                ring
-                sorry
-              · sorry
-              · sorry
-              /-
-              fin_cases i <;> simp <;> ring_nf -/}
+              apply toCoordinates_injective R (idx := .L1)
+              rw [map_add]
+              repeat rw [Families.mul_def]
+              simp only [Nat.succ_eq_add_one, Nat.reduceAdd, Fin.isValue, zero_mul, neg_mul,
+                zero_add, one_mul, add_zero, sub_self, Matrix.cons_val_zero, Matrix.cons_val_one,
+                Matrix.cons_val, mul_zero, neg_add_rev, neg_neg]
+              erw [Families.toCoordinates_apply R, Families.toCoordinates_apply R,
+                Families.toCoordinates_apply R]
+              ext i
+              fin_cases i <;> simp <;> ring
+              --also works after rw [map_add]: (but takes longer to elab)
+              --the proof below makes use of d.toCoordinates_mul_L1,
+              --repeat rw [toCoordinates_mul_L1]
+              --funext i
+              --fin_cases i <;> simp <;> ring
+
+          }
   | _ => sorry
               /-
   | .L2 α => {
@@ -327,7 +327,7 @@ variable (idx : Index R)
 
 #synth IsLeibniz (d R idx)
 
-/-
+
 variable {A : Type*} [NonUnitalNonAssocRing A] [IsLeibniz A] [Module R A] [SMulCommClass R A A]
 variable [IsScalarTower R A A]
 
@@ -339,6 +339,5 @@ theorem d_is_injective : ∀ idx idx', Nonempty (d R idx ≃ₙₐ[R] d R idx') 
 
 theorem classif (dim3 : Module.finrank R A = 3) : ∃! idx, Nonempty (d R idx ≃ₙₐ[R] A) := by
   sorry
- -/
 
-end inductiveTypes
+end d

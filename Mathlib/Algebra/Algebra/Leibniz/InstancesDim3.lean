@@ -147,6 +147,7 @@ abbrev d (idx : Index R) : Type := --Fin 3 → R/-
 
 #check Index.L1
 
+
 instance (idx : Index R) : NonUnitalNonAssocRing (d R idx) :=  by cases idx <;> infer_instance
 
 instance (idx : Index R) : Module R (d R idx) := by cases idx <;> infer_instance
@@ -241,7 +242,7 @@ instance (idx : Index R) : IsLeibniz (d R idx) :=
               ext i
               fin_cases i <;> simp <;> ring
               --also works after rw [map_add]: (but takes longer to elab)
-              --the proof below makes use of d.toCoordinates_mul_L1,
+              --the proof below does not need d.toCoordinates_mul_L1,
               --repeat rw [toCoordinates_mul_L1]
               --funext i
               --fin_cases i <;> simp <;> ring
@@ -327,6 +328,19 @@ variable (idx : Index R)
 
 #synth IsLeibniz (d R idx)
 
+universe u v w
+
+structure NonUnitalAlgEquiv
+    (R : Type u) (A : Type v) (B : Type w)
+    [Field R]
+    [NonUnitalNonAssocRing A] [Module R A]
+    [NonUnitalNonAssocRing B] [Module R B]
+    extends A ≃ₗ[R] B where
+      map_mul' : ∀ x y : A,
+      toLinearEquiv (x * y) =
+      toLinearEquiv x * toLinearEquiv y
+
+notation:25 A " ≃ₙₐ[" R "] " B => NonUnitalAlgEquiv R A B
 
 variable {A : Type*} [NonUnitalNonAssocRing A] [IsLeibniz A] [Module R A] [SMulCommClass R A A]
 variable [IsScalarTower R A A]
